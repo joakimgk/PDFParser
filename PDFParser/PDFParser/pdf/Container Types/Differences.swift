@@ -31,12 +31,11 @@ class Differences {
                 baseCharIndex = i
             }
         }
-        charUnicodes = charDifferences.compactMapValues({
-            if let unic = PDFAGL.unicodeForGlyphName[$0] {
-                return Unicode.Scalar(unic)
+        for d in charDifferences {
+            if let unic = PDFAGL.unicodeForGlyphName[d.value] {
+                charDifferences[d.key] = "\(String(describing: Unicode.Scalar(unic)))"
             }
-            return nil
-        })
+        }
         print("charUnicodes: \(charUnicodes)")
     }
     func characterIdToUnicode(_ char: PDFFontFile.CharacterId) -> UnicodeScalar? {

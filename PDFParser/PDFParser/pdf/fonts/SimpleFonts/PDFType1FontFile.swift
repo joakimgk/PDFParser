@@ -60,20 +60,23 @@ struct PDFType1FontFile {
         // ASCII segment length (little endian)
         var text: String = ""
         var asciiTextLength: Int = 0
-        data.withUnsafeBytes { (rawBytes: UnsafeRawBufferPointer) -> Void in
-            let bytes = rawBytes.bindMemory(to: UInt8.self)
-            if (data.count > 0 && bytes[0] == 0x80)
-            {
-                asciiTextLength = Int(bytes[2]) | Int(bytes[3]) << 8 | Int(bytes[4]) << 16 | Int(bytes[5]) << 24
-                let headerEndIndex = data.index(data.startIndex, offsetBy: PDFType1FontFile.headerLength)
-                let asciiTextEndIndex = headerEndIndex.advanced(by: asciiTextLength)
-                let textData = data[headerEndIndex..<asciiTextEndIndex]
-                text = String(data:textData, encoding:.ascii) ?? ""
-            }
-            else
-            {
-                text = String(data:data, encoding:.ascii) ?? ""
-            }
+        let tempData: NSMutableData = NSMutableData(length: data.count)!
+        data.withUnsafeBytes {
+            tempData.replaceBytes(in: NSMakeRange(0, data.count), withBytes: $0)
+        }
+        
+        let bytes = tempData.bytes.bindMemory(to: UInt8.self, capacity: data.count)
+        if (data.count > 0 && bytes[0] == 0x80)
+        {
+            asciiTextLength = Int(bytes[2]) | Int(bytes[3]) << 8 | Int(bytes[4]) << 16 | Int(bytes[5]) << 24
+            let headerEndIndex = data.index(data.startIndex, offsetBy: PDFType1FontFile.headerLength)
+            let asciiTextEndIndex = headerEndIndex.advanced(by: asciiTextLength)
+            let textData = data[headerEndIndex..<asciiTextEndIndex]
+            text = String(data:textData, encoding:.ascii) ?? ""
+        }
+        else
+        {
+            text = String(data:data, encoding:.ascii) ?? ""
         }
         return (asciiTextLength, text)
     }

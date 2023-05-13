@@ -50,11 +50,12 @@ class TrueTypeFontFileReader {
     }*/
 
     func get<T>() -> T where T: FixedWidthInteger {
-        let res = data[pos...].withUnsafeBytes { (pointer: UnsafeRawBufferPointer) -> T in
-            let typedPointer: UnsafeBufferPointer<T> = pointer.bindMemory(to: T.self)
-
-            return currentSystemIsLittleEndian ? typedPointer[0].byteSwapped : typedPointer[0]
+        let tempData: NSMutableData = NSMutableData(length: 26)!
+        data[pos...].withUnsafeBytes {
+            tempData.replaceBytes(in: NSMakeRange(0, data[pos...].count), withBytes: $0)
         }
+        let typedPointer: UnsafePointer<T> = tempData.bytes.bindMemory(to: T.self, capacity: data[pos...].count)
+        let res = currentSystemIsLittleEndian ? typedPointer[0].byteSwapped : typedPointer[0]
         pos += MemoryLayout<T>.size
         return res
     }
